@@ -15,9 +15,9 @@ namespace FlexPlayer
 		public string artist;
 		public int stars;
 		public bool playing;
-		
-		public Texture2D small_icon;
 
+		bool loaded;
+		
 		public MusicData(string path) {
 			this.path = path;
 		}
@@ -40,13 +40,14 @@ namespace FlexPlayer
 		}
 
 		public void UnloadData() {
-			Debug.Log( $"unloaded {title}" );
-			small_icon = null;
+			// Debug.Log( $"unloaded {title}" );
 			title = null;
 			artist = null;
+			loaded = false;
 		}
 
 		public void LoadData() {
+			if ( loaded ) return;
 			using var file = File.Create( path, ReadStyle.None );
 			file.GetTag( TagTypes.AudibleMetadata );
 			
@@ -62,7 +63,7 @@ namespace FlexPlayer
 				title = Path.GetFileNameWithoutExtension( path );
 			}
 
-			Debug.Log( $"loaded {title}" );
+			// Debug.Log( $"loaded {title}" );
 			// small icon
 			// if ( file.Tag.Pictures.Length > 0 ) {
 			// 	var bin = file.Tag.Pictures[0].Data.Data;
@@ -84,6 +85,7 @@ namespace FlexPlayer
 			// else {
 			// 	small_icon = null;
 			// }
+			loaded = true;
 		}
 	}
 }
