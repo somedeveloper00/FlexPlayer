@@ -13,7 +13,7 @@ namespace FlexPlayer
 		public string path;
 		public string title;
 		public string artist;
-		public int stars;
+		public int rate;
 		public bool playing;
 
 		bool loaded;
@@ -39,14 +39,14 @@ namespace FlexPlayer
 			return icon;
 		}
 
-		public void UnloadData() {
-			Debug.Log( $"unloaded {title}" );
+		public void UnloadMetaData() {
+			Debug.Log( $"unloaded meta data for {title}" );
 			title = null;
 			artist = null;
 			loaded = false;
 		}
 
-		public void LoadData() {
+		public void LoadMetaData() {
 			if ( loaded ) return;
 			using var file = File.Create( path, ReadStyle.None );
 			file.GetTag( TagTypes.AudibleMetadata );
@@ -62,9 +62,18 @@ namespace FlexPlayer
 			if ( string.IsNullOrEmpty( title ) ) {
 				title = Path.GetFileNameWithoutExtension( path );
 			}
-
-			Debug.Log( $"loaded {title}" );
 			loaded = true;
 		}
+
+		public static MusicData Deserialize(string data) {
+			var split = data.Split( (char)0x1f ); // unit separator char. plain text cannot contain them
+			return new MusicData( split[0] ) {
+				title = split[1],
+				artist = split[2],
+				rate = int.Parse( split[3] )
+			};
+		}
+		
+		public string Serialize() => $"{path}{(char)0x1f}{title}{(char)0x1f}{artist}{(char)0x1f}{rate}";
 	}
 }

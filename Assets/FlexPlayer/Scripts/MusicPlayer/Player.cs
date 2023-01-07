@@ -3,11 +3,11 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace FlexPlayer
+namespace FlexPlayer.MusicPlayer
 {
-	public class MusicPlayer : MonoBehaviour
+	public class Player : MonoBehaviour
 	{
-		public static MusicPlayer instance;
+		public static Player instance;
 		
 		[SerializeField] AudioSource audioSource;
 

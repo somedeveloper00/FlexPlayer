@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 490c2271cb904b4a952a42e7ecf73a44, type: 3}
-  m_Name: Sprite Inventory
+  m_Name: SpriteInventory
   m_EditorClassIdentifier: 
   play: {fileID: 21300000, guid: 769f96b27224f8d428fe0efa6a67c712, type: 3}
   stop: {fileID: 21300000, guid: 92818591821938441bc529d826ab6176, type: 3}

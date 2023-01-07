@@ -1,11 +1,11 @@
 using System;
-using System.Collections;
-using System.Threading.Tasks;
+using FlexPlayer;
+using FlexPlayer.Utils;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace FlexPlayer
+namespace FlexPlayer.MusicList
 {
 	public class MusicElement : MonoBehaviour
 	{
@@ -15,14 +15,14 @@ namespace FlexPlayer
 		[SerializeField] TMP_Text title;
 		[SerializeField] TMP_Text artist;
 		[SerializeField] Image playStopImage;
-		[SerializeField] Image[] stars;
-		
-		MusicData _data;
+		[SerializeField] MusicElementStar[] stars;
+
 		Action<MusicData> _onPlay;
 		Coroutine disable_coroutine;
 
+		public MusicData Data { get; private set; }
 		public bool loaded { get; private set; }
-		
+
 		bool visible;
 		
 		public bool IsVisible {
@@ -37,35 +37,47 @@ namespace FlexPlayer
 		}
 
 		public void Load() {
-			_data.LoadData();
+			Data.LoadMetaData();
 			loaded = true;
 		}
 
 
 		public void Setup(MusicData data, Action<MusicData> onPlay) {
-			_data = data;
+			gameObject.SetActive( true );
+			Data = data;
 			_onPlay = onPlay;
 
 			rectTransform = GetComponent<RectTransform>();
-		}
-
-		void Show() {
-			gameObject.SetActive( true );
-			title.text = _data.title;
-			artist.text = _data.artist;
-			updatePlayImg();
-			for ( int i = 0; i < 5; i++ ) {
-				stars[i].sprite = _data.stars > i ? SpriteInventory.Instance.star_fill : SpriteInventory.Instance.star_empty;
+			for ( int i = 0; i < stars.Length; i++ ) {
+				var index = i;
+				stars[i].button.onClick.AddListener(() => {
+					Data.rate = index + 1;
+					MusicIOUtils.SaveCachedAsync();
+					setStars();
+				});
 			}
 		}
 
+		void setStars() {
+			for ( int i = 0; i < 5; i++ ) {
+				stars[i].image.sprite = Data.rate > i ? SpriteInventory.Instance.star_fill : SpriteInventory.Instance.star_empty;
+			}
+		}
+		void Show() {
+			gameObject.SetActive( true );
+			title.text = Data.title;
+			artist.text = Data.artist;
+			updatePlayImg();
+			setStars();
+		}
+
 		void updatePlayImg() {
-			playStopImage.sprite = _data.playing ? SpriteInventory.Instance.stop : SpriteInventory.Instance.play;
+			playStopImage.sprite = Data.playing ? SpriteInventory.Instance.stop : SpriteInventory.Instance.play;
 		}
 
 		public void Play() {
-			_onPlay?.Invoke( _data );
-			_data.playing = !_data.playing;
+			_onPlay?.Invoke( Data );
+			Data.playing = !Data.playing;
 			updatePlayImg();
 		}
 	}

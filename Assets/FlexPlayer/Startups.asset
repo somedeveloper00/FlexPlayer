@@ -10,6 +10,6 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d6f8f86dc7284178a4a0258a3c943383, type: 3}
-  m_Name: Initials
+  m_Name: Startups
   m_EditorClassIdentifier: 
   fps: 60

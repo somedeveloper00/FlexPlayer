@@ -2,8 +2,8 @@
 
 namespace FlexPlayer
 {
-	[CreateAssetMenu( menuName = "Initials", order = 0 )]
-	public class Initials : ScriptableObject
+	[CreateAssetMenu( menuName = "Startups", order = 0 )]
+	public class Startups : ScriptableObject
 	{
 		public int fps;
 
