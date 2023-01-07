@@ -40,7 +40,7 @@ namespace FlexPlayer
 		}
 
 		public void UnloadData() {
-			// Debug.Log( $"unloaded {title}" );
+			Debug.Log( $"unloaded {title}" );
 			title = null;
 			artist = null;
 			loaded = false;
@@ -63,28 +63,7 @@ namespace FlexPlayer
 				title = Path.GetFileNameWithoutExtension( path );
 			}
 
-			// Debug.Log( $"loaded {title}" );
-			// small icon
-			// if ( file.Tag.Pictures.Length > 0 ) {
-			// 	var bin = file.Tag.Pictures[0].Data.Data;
-			// 	try {
-			// 		const int size = 64;
-			// 		small_icon = new Texture2D( size, size );
-			// 		small_icon.LoadImage( bin );
-			// 		var rt = RenderTexture.GetTemporary( size, size, 24 );
-			// 		Graphics.Blit( small_icon, rt );
-			// 		RenderTexture.active = rt;
-			// 		small_icon.ReadPixels( new Rect( 0, 0, size, size ), 0, 0, false );
-			// 		small_icon.Apply();
-			// 		RenderTexture.ReleaseTemporary( rt );
-			// 	}
-			// 	catch (Exception e) {
-			// 		Debug.LogException( e );
-			// 	}
-			// }
-			// else {
-			// 	small_icon = null;
-			// }
+			Debug.Log( $"loaded {title}" );
 			loaded = true;
 		}
 	}

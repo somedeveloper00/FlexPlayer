@@ -8,9 +8,9 @@ namespace FlexPlayer
 		static CoroutineMaker instance;
 
 
-		public static void startCoroutine(IEnumerator coroutine) {
+		public static Coroutine startCoroutine(IEnumerator coroutine) {
 			createInstance();
-			instance.StartCoroutine( coroutine );
+			return instance.StartCoroutine( coroutine );
 		}
 		public static void stopCoroutine(Coroutine coroutine) {
 			createInstance();

@@ -24,20 +24,27 @@ namespace FlexPlayer
         }
 
         void Update() {
+            int loaded = 2; // extra load per frame
+            
             int max = Screen.height + 500;
             int min = 0 - 500;
             for ( int i = 0; i < elements.Count; i++ ) {
                 // check if inside screen
                 var y = elements[i].rectTransform.position.y;
                 var not_visible = y > max || y < min;
-                if ( elements[i].gameObject.activeSelf != !not_visible )
-                    elements[i].gameObject.SetActive( !not_visible );
+                if ( elements[i].IsShown == not_visible ) {
+                    if ( not_visible )
+                        elements[i].Hide();
+                    else
+                        elements[i].Show();
+                }
+
+                if ( loaded-- >= 0 && !elements[i].IsLoaded )
+                    elements[i].LoadData();
             }
         }
 
         void UpdateList() {
-            itemSamples.ForEach( s => s.gameObject.SetActive( false ) );
-            
             // destroy old items
             foreach (var selectable in elements)
                 Destroy(selectable.gameObject);
