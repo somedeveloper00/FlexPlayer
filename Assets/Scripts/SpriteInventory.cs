@@ -11,6 +11,7 @@ namespace FlexPlayer
 		public Sprite play, stop, star_fill, star_empty;
 
 		void OnEnable() {
+			Debug.Log( "sprite inventory loaded" );
 			Instance = this;
 		}
 	}

@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using FlexPlayer.Utils;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace FlexPlayer
 {
@@ -17,6 +19,7 @@ namespace FlexPlayer
         List<MusicElement> elements = new List<MusicElement>();
 
         Action on_unity_thread;
+        Stopwatch sw = new Stopwatch();
 
         void Start() {
             StartCoroutine( coroutine() );
@@ -24,23 +27,25 @@ namespace FlexPlayer
         }
 
         void Update() {
-            int loaded = 2; // extra load per frame
-            
+            const long max_ms_extra = 8; // extra load in less than specified milliseconds
+            sw.Restart();
+
             int max = Screen.height + 500;
             int min = 0 - 500;
             for ( int i = 0; i < elements.Count; i++ ) {
                 // check if inside screen
                 var y = elements[i].rectTransform.position.y;
-                var not_visible = y > max || y < min;
-                if ( elements[i].IsShown == not_visible ) {
-                    if ( not_visible )
-                        elements[i].Hide();
-                    else
-                        elements[i].Show();
+                var visible = !(y > max || y < min);
+                if ( elements[i].IsVisible != visible ) {
+                    elements[i].IsVisible = visible;
                 }
 
-                if ( loaded-- >= 0 && !elements[i].IsLoaded )
-                    elements[i].LoadData();
+                // load extra items
+                if ( sw.ElapsedMilliseconds < max_ms_extra ) {
+                    if ( !elements[i].loaded ) {
+                        elements[i].Load();
+                    }
+                }
             }
         }
 
