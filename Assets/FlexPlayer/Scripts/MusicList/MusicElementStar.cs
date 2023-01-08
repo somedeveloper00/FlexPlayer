@@ -8,7 +8,7 @@ namespace FlexPlayer.MusicList
 		public Button button { get; private set; }
 		public Image image { get; private set; }
 
-		void OnEnable() {
+		public void Init() {
 			button = GetComponent<Button>();
 			image = GetComponent<Image>();
 		}

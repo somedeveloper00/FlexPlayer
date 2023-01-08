@@ -33,6 +33,7 @@ namespace FlexPlayer.Utils
 
 		public static async void GetAllMusics(OnBatchFound onBatchFind, FindSettings settings = null) {
 
+			MusicDatas.Clear();
 			var st = new Stopwatch();
 			st.Start();
 			
@@ -61,16 +62,18 @@ namespace FlexPlayer.Utils
 			// read caches
 			if ( !Directory.Exists( Application.persistentDataPath ) )
 				Directory.CreateDirectory( Application.persistentDataPath );
-			await using (var file = new FileStream( cachePath, FileMode.OpenOrCreate, FileAccess.Read )) {
+			using (var file = new FileStream( cachePath, FileMode.OpenOrCreate, FileAccess.Read )) {
 				using (var reader = new StreamReader( file )) {
 					while (!reader.EndOfStream) {
 						var line = await reader.ReadLineAsync();
 						var musicData = MusicData.Deserialize( line );
-						MusicDatas.Add( musicData );
-						batch[batch_index++] = musicData;
-						if ( batch_index == batch.Length ) {
-							onBatchFind( batch, batch.Length );
-							batch_index = 0;
+						if ( System.IO.File.Exists( musicData.path ) ) {
+							MusicDatas.Add( musicData );
+							batch[batch_index++] = musicData;
+							if ( batch_index == batch.Length ) {
+								onBatchFind( batch, batch.Length );
+								batch_index = 0;
+							}
 						}
 					} 
 				}
@@ -78,9 +81,6 @@ namespace FlexPlayer.Utils
 
 			// read files for new ones
 			bool foundNewMusic = false;
-			var enumOptions = new EnumerationOptions {
-				RecurseSubdirectories = true
-			};
 			foreach ( var path in musicPaths ) {
 				if ( !Directory.Exists( path ) ) {
 					Debug.Log( $"directory {path} doesn't exist. skipping." );
@@ -88,7 +88,7 @@ namespace FlexPlayer.Utils
 				}
 
 				try {
-					var filePaths = Directory.EnumerateFiles( path, "*.mp3", enumOptions );
+					var filePaths = Directory.EnumerateFiles( path, "*.mp3", SearchOption.AllDirectories );
 					int c = 0;
 					foreach ( var filePath in filePaths ) {
 						c++;

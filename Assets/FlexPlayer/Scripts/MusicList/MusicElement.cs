@@ -1,5 +1,8 @@
 using System;
+using System.Security.Cryptography;
+using System.Threading.Tasks;
 using FlexPlayer;
+using FlexPlayer.Pool;
 using FlexPlayer.Utils;
 using TMPro;
 using UnityEngine;
@@ -7,7 +10,7 @@ using UnityEngine.UI;
 
 namespace FlexPlayer.MusicList
 {
-	public class MusicElement : MonoBehaviour
+	public class MusicElement : MonoBehaviour, IPoolable
 	{
 		public RectTransform rectTransform { get; private set; }
 		
@@ -19,37 +22,20 @@ namespace FlexPlayer.MusicList
 
 		Action<MusicData> _onPlay;
 		Coroutine disable_coroutine;
+		bool _isActive;
 
 		public MusicData Data { get; private set; }
-		public bool loaded { get; private set; }
 
-		bool visible;
+
+		public bool IsActive() => _isActive;
 		
-		public bool IsVisible {
-			get => visible;
-			set {
-				visible = value;
-				if ( visible ) {
-					if (!loaded) Load();
-					Show();
-				}
-			}
-		}
-
-		public void Load() {
-			Data.LoadMetaData();
-			loaded = true;
-		}
-
-
 		public void Setup(MusicData data, Action<MusicData> onPlay) {
-			gameObject.SetActive( true );
 			Data = data;
 			_onPlay = onPlay;
 
-			rectTransform = GetComponent<RectTransform>();
 			for ( int i = 0; i < stars.Length; i++ ) {
 				var index = i;
+				stars[i].button.onClick.RemoveAllListeners();
 				stars[i].button.onClick.AddListener(() => {
 					Data.rate = index + 1;
 					MusicIOUtils.SaveCachedAsync();
@@ -58,27 +44,57 @@ namespace FlexPlayer.MusicList
 			}
 		}
 
-		void setStars() {
-			for ( int i = 0; i < 5; i++ ) {
-				stars[i].image.sprite = Data.rate > i ? SpriteInventory.Instance.star_fill : SpriteInventory.Instance.star_empty;
-			}
+		public void PlayMusic() {
+			_onPlay?.Invoke( Data );
+			Data.playing = !Data.playing;
+			updatePlayImg();
 		}
-		void Show() {
+
+		public void Init() {
+			rectTransform = GetComponent<RectTransform>();
+			foreach ( var star in stars ) star.Init();
+		}
+
+		public async void Activate() {
+			if ( Data.IsLoading ) {
+				while (Data.IsLoading) await Task.Yield();
+			}
+
+			if ( !Data.Loaded ) {
+				await Data.LoadMetaData();
+			}
+			assignFromData();
 			gameObject.SetActive( true );
+			_isActive = true;
+		}
+
+		public void Deactivate() {
+			gameObject.SetActive( false );
+			_isActive = false;
+		}
+
+		public IPoolable Duplicate() {
+			var go = Instantiate( gameObject, transform.parent );
+			var element = go.GetComponent<MusicElement>();
+			element.Init();
+			return element;
+		}
+
+		void assignFromData() {
 			title.text = Data.title;
 			artist.text = Data.artist;
 			updatePlayImg();
 			setStars();
 		}
+		
+		void setStars() {
+			for ( int i = 0; i < 5; i++ ) {
+				stars[i].image.sprite = Data.rate > i ? SpriteInventory.Instance.star_fill : SpriteInventory.Instance.star_empty;
+			}
+		}
 
 		void updatePlayImg() {
 			playStopImage.sprite = Data.playing ? SpriteInventory.Instance.stop : SpriteInventory.Instance.play;
-		}
-
-		public void Play() {
-			_onPlay?.Invoke( Data );
-			Data.playing = !Data.playing;
-			updatePlayImg();
 		}
 	}
 }

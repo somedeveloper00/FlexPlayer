@@ -8,9 +8,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/FlexPlayer/MainScene.unity
     guid: 2cda990e2423bbf4892e6590ba056729
-  - enabled: 0
-    path: Assets/TextMesh Pro/Examples & Extras/Scenes/Benchmark (Floating Text).unity
-    guid: 16177da2e3254cee91944756d5f8ddd3
   m_configObjects:
     com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: 4c763431883c635428ef3de978cc4da6, type: 2}
     com.unity.adaptiveperformance.samsung.android.provider_settings: {fileID: 11400000, guid: 9f727cc3b4e525a48bfe56174f99d0f3, type: 2}

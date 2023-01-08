@@ -33,7 +33,7 @@ namespace FlexPlayer.MusicPlayer
 			if ( req.result == UnityWebRequest.Result.Success) {
 				audioSource.clip = DownloadHandlerAudioClip.GetContent( req );
 				audioSource.Play();
-				Debug.Log( "Play: " + musicData.title + " Success" );
+				Debug.Log( "PlayMusic: " + musicData.title + " Success" );
 			}
 			else {
 				Debug.LogError( req.error );

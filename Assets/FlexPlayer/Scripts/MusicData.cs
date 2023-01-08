@@ -1,9 +1,15 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
 using TagLib;
+using TagLib.Id3v2;
 using UnityEngine;
 using File = TagLib.File;
+using Tag = TagLib.Tag;
 
 namespace FlexPlayer
 {
@@ -16,17 +22,22 @@ namespace FlexPlayer
 		public int rate;
 		public bool playing;
 
-		bool loaded;
+		public bool Loaded { get; private set; }
+		public bool IsLoading { get; private set; }
 		
+		bool cache_loaded;
+		
+		TagLib.Id3v2.Tag _tag;
+
 		public MusicData(string path) {
 			this.path = path;
 		}
 
 		public Texture2D getIcon() {
-			var _file = File.Create( path, ReadStyle.Average );
+			
 			Texture2D icon = null;
-			if ( _file.Tag.Pictures.Length > 0 ) {
-				var bin = _file.Tag.Pictures[0].Data.Data;
+			if ( _tag.Pictures.Length > 0 ) {
+				var bin = _tag.Pictures[0].Data.Data;
 				try {
 					icon = new Texture2D( 64, 64 );
 					icon.LoadImage( bin );
@@ -43,26 +54,46 @@ namespace FlexPlayer
 			Debug.Log( $"unloaded meta data for {title}" );
 			title = null;
 			artist = null;
-			loaded = false;
+			Loaded = false;
+			_tag = null;
 		}
 
-		public void LoadMetaData() {
-			if ( loaded ) return;
-			using var file = File.Create( path, ReadStyle.None );
-			file.GetTag( TagTypes.AudibleMetadata );
-			
-			// artist
-			artist = file.Tag.AlbumArtists.FirstOrDefault( s => !string.IsNullOrEmpty( s ) );
-			if ( string.IsNullOrEmpty( artist ) ) {
-				artist = file.Tag.Composers.FirstOrDefault( s => !string.IsNullOrEmpty( s ) );
+		public async Task LoadMetaData() {
+			if ( Loaded ) return;
+			if ( IsLoading ) return;
+			IsLoading = true;
+			if ( cache_loaded ) {
+				// load in another thread
+				await Task.Run( load_from_tag );
+				IsLoading = false;
+				return;
 			}
 
-			// title
-			title = file.Tag.Title;
-			if ( string.IsNullOrEmpty( title ) ) {
-				title = Path.GetFileNameWithoutExtension( path );
+			load_from_tag();
+			IsLoading = false;
+
+			void load_from_tag() {
+				// artist
+				var file = File.Create( path );
+				if ( !file.TagTypes.HasFlag( TagTypes.Id3v2 ) ) return;
+				_tag = (TagLib.Id3v2.Tag)file.GetTag( TagTypes.Id3v2 );
+
+				artist = _tag.AlbumArtists.FirstOrDefault( s => !string.IsNullOrEmpty( s ) );
+				if ( string.IsNullOrEmpty( artist ) ) {
+					artist = _tag.Composers.FirstOrDefault( s => !string.IsNullOrEmpty( s ) );
+				}
+
+				// title
+				title = _tag.Title;
+				if ( string.IsNullOrEmpty( title ) ) {
+					title = Path.GetFileNameWithoutExtension( path );
+				}
+
+				// rate
+				var popularimeterFrame = PopularimeterFrame.Get( _tag, "FlexPlayer", true );
+				rate = popularimeterFrame.Rating;
+				Loaded = true;
 			}
-			loaded = true;
 		}
 
 		public static MusicData Deserialize(string data) {
@@ -70,7 +101,8 @@ namespace FlexPlayer
 			return new MusicData( split[0] ) {
 				title = split[1],
 				artist = split[2],
-				rate = int.Parse( split[3] )
+				rate = int.Parse( split[3] ),
+				cache_loaded = true
 			};
 		}
 		
