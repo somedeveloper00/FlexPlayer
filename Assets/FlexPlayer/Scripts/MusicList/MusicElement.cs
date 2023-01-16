@@ -1,7 +1,5 @@
 using System;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
-using FlexPlayer;
 using FlexPlayer.Pool;
 using FlexPlayer.Utils;
 using TMPro;
@@ -53,15 +51,12 @@ namespace FlexPlayer.MusicList
 		public void Init() {
 			rectTransform = GetComponent<RectTransform>();
 			foreach ( var star in stars ) star.Init();
+			transform.position = new Vector3( transform.position.x, 100000, 0 );
 		}
 
-		public async void Activate() {
-			if ( Data.IsLoading ) {
-				while (Data.IsLoading) await Task.Yield();
-			}
-
+		public void Activate() {
 			if ( !Data.Loaded ) {
-				await Data.LoadMetaData();
+				Data.LoadMetaData();
 			}
 			assignFromData();
 			gameObject.SetActive( true );
@@ -69,7 +64,8 @@ namespace FlexPlayer.MusicList
 		}
 
 		public void Deactivate() {
-			gameObject.SetActive( false );
+			Vector3 deactive_pos = new Vector3( transform.position.x, 100000, 0 );
+			transform.position = deactive_pos;
 			_isActive = false;
 		}
 

@@ -1,0 +1,90 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1521398425 &-6413620175491308737
+VideoBuildInfo:
+  m_VideoClipCount: 0
+  m_IsVideoModuleDisabled: 0
+--- !u!641289076 &-1313477436652130921
+AudioBuildInfo:
+  m_IsAudioDisabled: 0
+  m_AudioClipCount: 0
+  m_AudioMixerCount: 0
+--- !u!1125 &1
+BuildReport:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Build_2023-07-Jan-09-43-18
+  m_Summary:
+    buildStartTime:
+      serializedVersion: 2
+      ticks: 638086687866617566
+    buildGUID: bdafb8398bea6884c92717568826ee8f
+    platformName: Android
+    platformGroupName: Android
+    subtarget: 0
+    options: 262281
+    assetBundleOptions: 0
+    outputPath: C:/Users/userone/FlexPlayer/Builds/FlexPlayer.apk
+    crc: 0
+    totalSize: 0
+    totalTimeTicks: 108344747
+    totalErrors: 2
+    totalWarnings: 0
+    buildType: 1
+    buildResult: 2
+  m_Files: []
+  m_BuildSteps:
+  - stepName: Build player
+    durationTicks: 108344747
+    depth: 0
+    messages: []
+  - stepName: Preprocess Player
+    durationTicks: 15787458
+    depth: 1
+    messages: []
+  - stepName: Prepare For Build
+    durationTicks: 81763181
+    depth: 1
+    messages:
+    - type: 4
+      content: 'UnityException: Can not sign the application
+
+        Unable to sign
+        the application; please provide passwords!'
+    - type: 0
+      content: Building Player failed
+  m_Appendices:
+  - {fileID: 7712014167879721869}
+  - {fileID: -1313477436652130921}
+  - {fileID: -6413620175491308737}
+--- !u!382020655 &7712014167879721869
+PluginBuildInfo:
+  m_RuntimePlugins:
+  - Newtonsoft.Json
+  - Unity.Burst.Unsafe
+  - Unity.Burst.Cecil.Mdb
+  - Unity.Burst.Cecil.Pdb
+  - Unity.Burst.Cecil
+  - Unity.Burst.Cecil.Rocks
+  - Unity.VisualScripting.Antlr3.Runtime
+  - RuntimePermissions
+  - taglib-sharp
+  - IngameDebugConsole
+  - nunit.framework
+  m_EditorPlugins:
+  - Unity.Plastic.Newtonsoft.Json
+  - BoundedBiharmonicWeightsModule
+  - Unity.Plastic.Antlr3.Runtime
+  - Unity.VisualScripting.YamlDotNet
+  - Unity.VisualScripting.TextureAssets
+  - zlib64Plastic
+  - Unity.VisualScripting.IonicZip
+  - liblz4Plastic
+  - log4netPlastic
+  - lz4x64Plastic
+  - Unity.VisualScripting.sqlite3
+  - AppleEventIntegration
+  - NugetForUnity
+  - unityplastic

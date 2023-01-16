@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace FlexPlayer.Pool
@@ -23,17 +24,23 @@ namespace FlexPlayer.Pool
 		public int Count => elements.Count;
 
 		public T GetInactive() {
-			int starting_index = indexer;
-			for ( ; indexer < elements.Count; indexer++ ) {
-				if ( !elements[indexer].IsActive() )
-					return elements[indexer++];
-				if ( starting_index == indexer ) // all have been searched
-					break;
-				if ( indexer == elements.Count - 1 )
+			int alpha = indexer;
+			do {
+				if ( !elements[indexer].IsActive() ) {
+					alpha = indexer; // for returning
+					indexer++; // for next time
+					if ( indexer == elements.Count )
+						indexer = 0;
+					return elements[alpha];
+				}
+				indexer++;
+				if ( indexer == elements.Count )
 					indexer = 0;
 			}
+			while( alpha != indexer );
 
 			elements.Add( (T)elements[0].Duplicate() );
+			Debug.Log( $"duplicated. {string.Join( ", ", elements.Select( (e, i) => $"{i} {e.IsActive()}" ) )}" );
 			indexer = 0;
 			return elements[^1];
 		}

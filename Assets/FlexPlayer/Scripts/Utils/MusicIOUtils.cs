@@ -67,15 +67,14 @@ namespace FlexPlayer.Utils
 					while (!reader.EndOfStream) {
 						var line = await reader.ReadLineAsync();
 						var musicData = MusicData.Deserialize( line );
-						if ( System.IO.File.Exists( musicData.path ) ) {
-							MusicDatas.Add( musicData );
-							batch[batch_index++] = musicData;
-							if ( batch_index == batch.Length ) {
-								onBatchFind( batch, batch.Length );
-								batch_index = 0;
-							}
+						if ( musicData == null ) continue;
+						MusicDatas.Add( musicData );
+						batch[batch_index++] = musicData;
+						if ( batch_index == batch.Length ) {
+							onBatchFind( batch, batch.Length );
+							batch_index = 0;
 						}
-					} 
+					}
 				}
 			}
 

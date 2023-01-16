@@ -1,8 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
 
 namespace FlexPlayer.MusicList
@@ -12,15 +13,29 @@ namespace FlexPlayer.MusicList
         [SerializeField] MusicElementPoolList poolList;
         [SerializeField] RectTransform container;
         [SerializeField] float elementHeight;
-        
-        [Header("Settings")]
-        [SerializeField] int maxItems = 100;
-        [SerializeField] bool playable = true;
 
-        List<Item> items = new List<Item>( 128 );
+        [Header( "Page" )] 
+        [SerializeField] PagePanel pagePanel;
+        [SerializeField] TMP_Text pageIndicatorTxt;
+        [SerializeField] string pageIndicatorFormat = "Page {0}/{1}";
+        [SerializeField] Button pageNext, pagePrevious;
+        
+        [Header( "Settings" )] 
+        [SerializeField] int itemsPerPage = 100;
+        [SerializeField] float minY, maxY;
+        [SerializeField] bool playable = true;
+        
+        [Header("Animations")]
+        [SerializeField] Animator animator;
+        [SerializeField] string pageOpenAnimName = "page-open";
+        [SerializeField] string pageCloseAnimName = "page-close";
+
+        List<Page> _pages = new List<Page>( 4 );
+        int _currentPageIndex = 0;
+        bool _pagePanelOpen;
+        
         Action on_unity_thread;
-        readonly Stopwatch sw = new Stopwatch();
-        int items_pool_indexer;
+
 
         void Start() {
             StartCoroutine( safe_coroutine() );
@@ -30,98 +45,146 @@ namespace FlexPlayer.MusicList
         }
 
         void Update() {
+            if ( _pages.Count == 0 ) return;
             const long max_ms_extra = 8; // extra load in less than specified milliseconds
-            sw.Restart();
 
-            int max = Screen.height + 500;
-            int min = 0 - 500;
+            var items = _pages[_currentPageIndex].items;
+
+            // check for items to deactivate
             for ( int i = 0; i < items.Count; i++ ) {
-                
-                // check if inside screen and setup views from pool
-                var y = container.position.y + items[i].y;
-                // draw debug line for Y and min and max
-                Debug.DrawLine( new Vector3( 0, y, 0 ), new Vector3( 100, y, 0 ), Color.red );
-                Debug.DrawLine( new Vector3( 0, min, 0 ), new Vector3( 100, min, 0 ), Color.green );
-                Debug.DrawLine( new Vector3( 0, max, 0 ), new Vector3( 100, max, 0 ), Color.blue );
-                var visible = !(y > max || y < min);
-                if ( visible ) {
-                    if ( items[i].current == null ) {
-                        Debug.Log( $"taking from pool for {items[i].data.path}" );
-                        // take new from pool
-                        items[i].current = poolList.GetInactive();
-                        items[i].current.Setup( items[i].data, Play );
-                        items[i].current.Activate();
-                        items[i].current.rectTransform.position = new Vector2(
-                            items[i].current.rectTransform.position.x,
-                            y );
-                    }
-                }
-                else {
+                var y = container.anchoredPosition.y + items[i].y;
+                var visible = !(y > maxY || y < minY);
+                if ( !visible ) {
                     if ( items[i].current != null ) { // return to pool
                         items[i].current.Deactivate();
                         items[i].current = null;
                     }
                 }
+            }
 
-                // // load extra items
-                // if ( sw.ElapsedMilliseconds < max_ms_extra ) {
-                //     if ( !items[i].data.Loaded && !items[i].data.IsLoading ) {
-                //         items[i].data.LoadMetaData();
-                //     }
-                // }
+            // check for items to activate
+            for ( int i = 0; i < items.Count; i++ ) {
+                var y = container.anchoredPosition.y + items[i].y;
+                var visible = !(y > maxY || y < minY);
+                if ( visible ) {
+                    if ( items[i].current == null ) {
+                        // take new from pool
+                        items[i].current = poolList.GetInactive();
+                        items[i].current.Setup( items[i].data, Play );
+                        items[i].current.Activate();
+                        items[i].current.rectTransform.anchoredPosition = new Vector2(
+                            items[i].current.rectTransform.anchoredPosition.x,
+                            items[i].y );
+                    }
+                }
             }
         }
 
-        
+
         /// <summary>
         /// adds music data array to the displaying list, given the array's length
         /// </summary>
         public void Add(MusicData[] musicDatas, int count) {
             Debug.Log( $"added {count} musics" );
-            for ( int i = 0; i < count; i++ ) 
-                add( musicDatas[i] );
+            on_unity_thread += () => {
+                for ( int i = 0; i < count; i++ )
+                    add( musicDatas[i] );
+                updatePageView();
+            };
         }
 
         /// <summary>
         /// Removes an element from the displaying list
         /// </summary>
         public void Remove(MusicData musicData) {
-            for ( int i = 0; i < items.Count; i++ ) {
-                if ( items[i].data == musicData ) {
-                    if ( items[i].current != null ) items[i].current.Deactivate();
-                    items.RemoveAt( i );
-                    return;
+            for ( int k = 0; k < _pages.Count; k++ ) {
+                var items = _pages[k].items;
+                for ( int i = 0; i < items.Count; i++ ) {
+                    if ( items[i].data == musicData ) {
+                        if ( items[i].current != null ) items[i].current.Deactivate();
+                        items.RemoveAt( i );
+                        return;
+                    }
                 }
             }
+
+            updatePageView();
+            updateContainerSize();
         }
 
         /// <summary>
         /// clears the displaying list
         /// </summary>
         public void Clear() {
-            for ( int i = 0; i < items.Count; i++ ) {
-                if ( items[i].current != null )
-                    items[i].current.Deactivate();
+            foreach ( var page in _pages ) {
+                var items = page.items;
+                for ( int i = 0; i < items.Count; i++ ) {
+                    if ( items[i].current != null )
+                        items[i].current.Deactivate();
+                }
+
+                items.Clear();
             }
-            items.Clear();
+
+            updatePageView();
+            updateContainerSize();
         }
 
+        public void TogglePagePannel() {
+            if ( _pagePanelOpen ) {
+                animator.Play( pageCloseAnimName );
+                _pagePanelOpen = false;
+            }
+            else {
+                animator.Play( pageOpenAnimName );
+                _pagePanelOpen = true;
+            }
+        }
+        
+        public void GotoPage(int number) {
+            if ( number < 0 || number > _pages.Count - 1 ) {
+                return;
+            }
+            // remove all views from views in the page
+            var items = _pages[_currentPageIndex].items;
+            for ( int i = 0; i < items.Count; i++ ) {
+                items[i].current?.Deactivate();
+                items[i].current = null;
+            }
+            _currentPageIndex = number;
+            updatePageView();
+            updateContainerSize();
+            
+        }
+        
+        public void NextPage() => GotoPage( _currentPageIndex + 1 );
+        public void PreviousPage() => GotoPage( _currentPageIndex - 1 );
+
+        void updatePageView() {
+            pageIndicatorTxt.text = string.Format( pageIndicatorFormat, _currentPageIndex + 1, _pages.Count );
+            pageNext.interactable = _pages.Count - 1 > _currentPageIndex;
+            pagePrevious.interactable = _currentPageIndex > 0;
+        }
 
         void add(MusicData data) {
-            if ( items.Count >= maxItems )
-                return;
-            on_unity_thread += () => {
-                Item item = new ();
-                item.data = data;
-                item.y = -items.Count * elementHeight;
-                items.Add( item );
-                // expand container size for scroll-view
-                setContainerSize( items.Count );
-            };
+            Item item = new();
+            if ( _pages.Count == 0 || _pages[^1].items.Count == itemsPerPage ) {
+                // new page 
+                _pages.Add( new Page() );
+                pagePanel.SetButtonCount( _pages.Count );
+            }
+
+            var page = _pages[^1];
+            item.data = data;
+            item.y = -page.items.Count * elementHeight;
+            page.items.Add( item );
+            // expand container size for scroll-view
+            updateContainerSize();
         }
 
-        void setContainerSize(int itemsCount) {
-            container.sizeDelta = new Vector2( container.sizeDelta.x, (1 + itemsCount) * elementHeight );
+        void updateContainerSize() {
+            container.sizeDelta =
+                new Vector2( container.sizeDelta.x, _pages[_currentPageIndex].items.Count * elementHeight );
         }
 
         void Play(MusicData musicData) {
@@ -137,7 +200,6 @@ namespace FlexPlayer.MusicList
                     poolList[i].GetComponent<RectTransform>().anchoredPosition.x,
                     -i * elementHeight );
             }
-            setContainerSize( poolList.Count );
         }
         
         IEnumerator safe_coroutine() {
@@ -148,6 +210,12 @@ namespace FlexPlayer.MusicList
             }
         }
 
+        [Serializable]
+        class Page
+        {
+            public List<Item> items = new List<Item>();
+        }
+        
         [Serializable]
         class Item
         {

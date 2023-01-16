@@ -21,11 +21,9 @@ namespace FlexPlayer
 		public string artist;
 		public int rate;
 		public bool playing;
+		public DateTime lastTimeModified;
 
 		public bool Loaded { get; private set; }
-		public bool IsLoading { get; private set; }
-		
-		bool cache_loaded;
 		
 		TagLib.Id3v2.Tag _tag;
 
@@ -58,54 +56,59 @@ namespace FlexPlayer
 			_tag = null;
 		}
 
-		public async Task LoadMetaData() {
+		public void LoadMetaData() {
 			if ( Loaded ) return;
-			if ( IsLoading ) return;
-			IsLoading = true;
-			if ( cache_loaded ) {
-				// load in another thread
-				await Task.Run( load_from_tag );
-				IsLoading = false;
-				return;
-			}
-
-			load_from_tag();
-			IsLoading = false;
-
-			void load_from_tag() {
-				// artist
-				var file = File.Create( path );
-				if ( !file.TagTypes.HasFlag( TagTypes.Id3v2 ) ) return;
-				_tag = (TagLib.Id3v2.Tag)file.GetTag( TagTypes.Id3v2 );
-
-				artist = _tag.AlbumArtists.FirstOrDefault( s => !string.IsNullOrEmpty( s ) );
-				if ( string.IsNullOrEmpty( artist ) ) {
-					artist = _tag.Composers.FirstOrDefault( s => !string.IsNullOrEmpty( s ) );
-				}
-
-				// title
-				title = _tag.Title;
-				if ( string.IsNullOrEmpty( title ) ) {
-					title = Path.GetFileNameWithoutExtension( path );
-				}
-
-				// rate
-				var popularimeterFrame = PopularimeterFrame.Get( _tag, "FlexPlayer", true );
-				rate = popularimeterFrame.Rating;
-				Loaded = true;
-			}
+			loadFromTag();
 		}
 
+		void loadFromTag() {
+			// artist
+			var file = File.Create( path );
+			if ( !file.TagTypes.HasFlag( TagTypes.Id3v2 ) ) return;
+			_tag = (TagLib.Id3v2.Tag)file.GetTag( TagTypes.Id3v2 );
+
+			artist = _tag.AlbumArtists.FirstOrDefault( s => !string.IsNullOrEmpty( s ) );
+			if ( string.IsNullOrEmpty( artist ) ) {
+				artist = _tag.Composers.FirstOrDefault( s => !string.IsNullOrEmpty( s ) );
+			}
+
+			// title
+			title = _tag.Title;
+			if ( string.IsNullOrEmpty( title ) ) {
+				title = Path.GetFileNameWithoutExtension( path );
+			}
+
+			// rate
+			var popularimeterFrame = PopularimeterFrame.Get( _tag, "FlexPlayer", true );
+			rate = popularimeterFrame.Rating;
+			Loaded = true;
+		}
+
+		/// <summary>
+		/// Deserializes the data, if valid, it'll return the <see cref="MusicData"/> back, otherwise it'll return null
+		/// </summary>
 		public static MusicData Deserialize(string data) {
 			var split = data.Split( (char)0x1f ); // unit separator char. plain text cannot contain them
+			
+#region validation checks
+			// data integrity
+			if ( split.Length != 5 ) return null;
+			// existence of file
+			if ( !System.IO.File.Exists( split[0] ) ) return null;
+			// modification time of file
+			if ( new FileInfo( split[0] ).LastWriteTimeUtc.Ticks != long.Parse( split[4] ) ) return null;
+#endregion
+			
 			return new MusicData( split[0] ) {
 				title = split[1],
 				artist = split[2],
 				rate = int.Parse( split[3] ),
-				cache_loaded = true
+				lastTimeModified = new DateTime( long.Parse( split[4] ) ),
+				Loaded = true
 			};
 		}
-		
-		public string Serialize() => $"{path}{(char)0x1f}{title}{(char)0x1f}{artist}{(char)0x1f}{rate}";
+
+		public string Serialize() =>
+			$"{path}{(char)0x1f}{title}{(char)0x1f}{artist}{(char)0x1f}{rate}{(char)0x1f}{lastTimeModified.Ticks}";
 	}
 }
